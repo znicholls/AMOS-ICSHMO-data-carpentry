@@ -1,12 +1,13 @@
 import argparse
-import iris
-iris.FUTURE.netcdf_promote = True
+import numpy
 import matplotlib.pyplot as plt
+
+import iris
 import iris.plot as iplt
 import iris.coord_categorisation
-import cmocean
-import numpy
+iris.FUTURE.netcdf_promote = True
 
+import cmocean
 
 def read_data(fname, month):
     """Read an input data file"""
