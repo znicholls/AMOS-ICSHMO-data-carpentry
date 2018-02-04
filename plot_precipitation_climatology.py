@@ -29,13 +29,14 @@ def convert_pr_units(cube):
     return cube
 
 
-def plot_data(cube, month, gridlines=False, levels=None):
+def plot_data(cube, month, gridlines=False, levels=None, mask=None):
     """Plot the data."""
-
+    import pdb
     if not levels:
         levels = numpy.arange(0, 10)
 
     fig = plt.figure(figsize=[12,5])
+
     iplt.contourf(cube, cmap=cmocean.cm.haline_r,
                   levels=levels,
                   extend='max')
@@ -50,14 +51,31 @@ def plot_data(cube, month, gridlines=False, levels=None):
     plt.title(title)
 
 
+def return_mask_from_land_surface_file(sftlf_file=None,mask='ocean'):
+    cube_land = iris.load_cube(sftlf_file,'land_area_fraction')
+    ocean_mask = numpy.where(cube_land.data < 5, True, False)
+    if mask == 'ocean':
+        return ocean_mask
+    elif mask == 'land':
+        return ~ocean_mask
+    else:
+        error('huh?')
+    return
+
 def main(inargs):
     """Plot the precipitation climatology."""
-
     cube = read_data(inargs.infile, inargs.month)
     cube = convert_pr_units(cube)
     clim = cube.collapsed('time', iris.analysis.MEAN)
+    if inargs.mask is not None:
+        clim.data = numpy.ma.asarray(clim.data)
+        clim.data.mask = return_mask_from_land_surface_file(
+            sftlf_file = inargs.mask[0],
+            mask = inargs.mask[1],
+        )
+
     plot_data(clim, inargs.month, gridlines=inargs.gridlines,
-              levels=inargs.cbar_levels)
+              levels=inargs.cbar_levels, mask=inargs.mask)
     plt.savefig(inargs.outfile)
 
 
@@ -78,6 +96,11 @@ if __name__ == '__main__':
                         help="Include gridlines on the plot")
     parser.add_argument("--cbar_levels", type=float, nargs='*', default=None,
                         help='list of levels / tick marks to appear on the colourbar')
+    parser.add_argument("--mask", type=str, nargs=2,
+                        metavar=('sftlf_file', 'realm'), default=None,
+                        help='Apply a land or ocean mask (specify the realm to mask)')
+
+
 
     args = parser.parse_args()
     main(args)
