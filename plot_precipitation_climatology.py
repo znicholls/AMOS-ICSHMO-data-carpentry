@@ -23,6 +23,8 @@ def read_data(fname, month):
 def convert_pr_units(cube):
     """Convert kg m-2 s-1 to mm day-1"""
 
+    expected_units = 'kg m-2 s-1'
+    assert cube.units == expected_units, 'Assumption is that units are {}'.format(expected_units)
     cube.data = cube.data * 86400
     cube.units = 'mm/day'
 
@@ -54,13 +56,11 @@ def plot_data(cube, month, gridlines=False, levels=None, mask=None):
 def return_mask_from_land_surface_file(sftlf_file=None,mask='ocean'):
     cube_land = iris.load_cube(sftlf_file,'land_area_fraction')
     ocean_mask = numpy.where(cube_land.data < 5, True, False)
+    assert mask in ['ocean','land'],'mask must be ocean or land'
     if mask == 'ocean':
         return ocean_mask
     elif mask == 'land':
         return ~ocean_mask
-    else:
-        error('huh?')
-    return
 
 def main(inargs):
     """Plot the precipitation climatology."""
